@@ -170,40 +170,82 @@ function renderUpcomingStrip() {
   });
 }
 
+function dismissBanner() {
+  const banner = document.getElementById('alertBanner');
+  banner.style.transition = 'transform 0.35s cubic-bezier(0.4,0,1,1), opacity 0.3s';
+  banner.style.transform = 'translateY(-140%)';
+  banner.style.opacity = '0';
+  setTimeout(() => { banner.style.display = 'none'; banner.style.transition = ''; banner.style.transform = ''; banner.style.opacity = ''; }, 380);
+}
+
+function initBannerSwipe() {
+  const banner = document.getElementById('alertBanner');
+  let startY = 0, curY = 0, dragging = false;
+
+  function onStart(e) {
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragging = true;
+    banner.style.transition = 'none';
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    curY = (e.touches ? e.touches[0].clientY : e.clientY) - startY;
+    if (curY < 0) {
+      banner.style.transform = `translateY(${curY}px)`;
+      banner.style.opacity = String(Math.max(0, 1 + curY / 120));
+    }
+  }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    if (curY < -50) { dismissBanner(); }
+    else {
+      banner.style.transition = 'transform 0.3s cubic-bezier(0.34,1.2,0.64,1), opacity 0.3s';
+      banner.style.transform = '';
+      banner.style.opacity = '';
+    }
+    curY = 0;
+  }
+
+  banner.addEventListener('touchstart', onStart, { passive: true });
+  banner.addEventListener('touchmove', onMove, { passive: true });
+  banner.addEventListener('touchend', onEnd);
+  banner.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+}
+
 function renderAlertBanner() {
   const banner = document.getElementById('alertBanner');
   const todaySubs = subs.filter(s => daysUntil(s.day) === 0);
   const soonSubs  = subs.filter(s => { const d = daysUntil(s.day); return d > 0 && d <= 3; });
 
+  let icon, title, sub, cls;
+
   if (todaySubs.length > 0) {
     const total = todaySubs.reduce((s,x) => s + Number(x.amount), 0);
-    const names = todaySubs.map(s => s.name).join(', ');
-    banner.className = 'alert-banner danger';
-    banner.style.display = 'block';
-    banner.innerHTML = `
-      <div class="alert-banner-title">💳 Charged today — $${total}</div>
-      <div class="alert-banner-sub">${names}</div>
-      <button class="alert-banner-close" onclick="this.parentElement.style.display='none'">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>`;
+    icon = '💳'; cls = 'danger';
+    title = `Charged today — $${total}`;
+    sub = todaySubs.map(s => s.name).join(', ');
   } else if (soonSubs.length > 0) {
     const next = soonSubs.sort((a,b) => daysUntil(a.day) - daysUntil(b.day))[0];
     const d = daysUntil(next.day);
-    banner.className = 'alert-banner warning';
-    banner.style.display = 'block';
-    banner.innerHTML = `
-      <div class="alert-banner-title">🔔 ${next.name} in ${d} day${d > 1 ? 's' : ''}</div>
-      <div class="alert-banner-sub">$${next.amount} · ${ordinal(next.day)} of the month${soonSubs.length > 1 ? ` · +${soonSubs.length-1} more` : ''}</div>
-      <button class="alert-banner-close" onclick="this.parentElement.style.display='none'">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>`;
+    icon = '🔔'; cls = 'warning';
+    title = `${next.name} in ${d} day${d > 1 ? 's' : ''}`;
+    sub = `$${next.amount} · ${ordinal(next.day)} of the month${soonSubs.length > 1 ? ' · +' + (soonSubs.length-1) + ' more' : ''}`;
   } else {
     banner.style.display = 'none';
+    return;
   }
+
+  banner.className = 'alert-banner ' + cls + ' anim-in';
+  banner.style.display = 'flex';
+  banner.innerHTML = `
+    <div class="alert-banner-icon">${icon}</div>
+    <div class="alert-banner-body">
+      <div class="alert-banner-title">${title}</div>
+      <div class="alert-banner-sub">${sub}</div>
+    </div>`;
 }
 
 function render() {
@@ -375,6 +417,7 @@ document.getElementById('subList').addEventListener('click', e => {
 load();
 registerSW();
 render();
+initBannerSwipe();
 
 // Restore notification state
 if (localStorage.getItem('notif_enabled') === '1' && Notification.permission === 'granted') {

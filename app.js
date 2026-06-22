@@ -172,47 +172,67 @@ function renderUpcomingStrip() {
 
 function dismissBanner() {
   const banner = document.getElementById('alertBanner');
-  banner.style.transition = 'transform 0.35s cubic-bezier(0.4,0,1,1), opacity 0.3s';
-  banner.style.transform = 'translateY(-140%)';
+  // Fly out from wherever finger released — fast spring out
+  const current = banner._dragY || 0;
+  banner.style.transition = 'transform 0.38s cubic-bezier(0.55,0,1,1), opacity 0.3s';
+  banner.style.transform = 'translateY(-160%)';
   banner.style.opacity = '0';
-  setTimeout(() => { banner.style.display = 'none'; banner.style.transition = ''; banner.style.transform = ''; banner.style.opacity = ''; }, 380);
+  setTimeout(() => {
+    banner.style.display = 'none';
+    banner.style.transition = '';
+    banner.style.transform = '';
+    banner.style.opacity = '';
+    banner._dragY = 0;
+  }, 400);
 }
 
 function initBannerSwipe() {
   const banner = document.getElementById('alertBanner');
-  let startY = 0, curY = 0, dragging = false;
+  let startY = 0, dragging = false;
+  banner._dragY = 0;
 
   function onStart(e) {
+    if (banner.style.display === 'none') return;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     dragging = true;
+    // Kill any running transition so finger takes full control
     banner.style.transition = 'none';
   }
+
   function onMove(e) {
     if (!dragging) return;
-    curY = (e.touches ? e.touches[0].clientY : e.clientY) - startY;
-    if (curY < 0) {
-      banner.style.transform = `translateY(${curY}px)`;
-      banner.style.opacity = String(Math.max(0, 1 + curY / 120));
-    }
+    const dy = (e.touches ? e.touches[0].clientY : e.clientY) - startY;
+    // Only allow upward drag
+    const clamped = Math.min(0, dy);
+    banner._dragY = clamped;
+    // Move 1:1 with finger
+    banner.style.transform = `translateY(${clamped}px)`;
+    // Fade as it moves up — fully gone at -100px
+    banner.style.opacity = String(Math.max(0, 1 + clamped / 100));
   }
+
   function onEnd() {
     if (!dragging) return;
     dragging = false;
-    if (curY < -50) { dismissBanner(); }
-    else {
-      banner.style.transition = 'transform 0.3s cubic-bezier(0.34,1.2,0.64,1), opacity 0.3s';
-      banner.style.transform = '';
-      banner.style.opacity = '';
+    const dy = banner._dragY || 0;
+    if (dy < -40) {
+      // Crossed threshold — fly out
+      dismissBanner();
+    } else {
+      // Snap back with spring
+      banner.style.transition = 'transform 0.45s cubic-bezier(0.34,1.4,0.64,1), opacity 0.3s';
+      banner.style.transform = 'translateY(0)';
+      banner.style.opacity = '1';
+      banner._dragY = 0;
     }
-    curY = 0;
   }
 
   banner.addEventListener('touchstart', onStart, { passive: true });
-  banner.addEventListener('touchmove', onMove, { passive: true });
-  banner.addEventListener('touchend', onEnd);
-  banner.addEventListener('mousedown', onStart);
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onEnd);
+  banner.addEventListener('touchmove',  onMove,  { passive: true });
+  banner.addEventListener('touchend',   onEnd);
+  banner.addEventListener('mousedown',  onStart);
+  window.addEventListener('mousemove',  onMove);
+  window.addEventListener('mouseup',    onEnd);
 }
 
 function renderAlertBanner() {

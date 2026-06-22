@@ -170,7 +170,44 @@ function renderUpcomingStrip() {
   });
 }
 
+function renderAlertBanner() {
+  const banner = document.getElementById('alertBanner');
+  const todaySubs = subs.filter(s => daysUntil(s.day) === 0);
+  const soonSubs  = subs.filter(s => { const d = daysUntil(s.day); return d > 0 && d <= 3; });
+
+  if (todaySubs.length > 0) {
+    const total = todaySubs.reduce((s,x) => s + Number(x.amount), 0);
+    const names = todaySubs.map(s => s.name).join(', ');
+    banner.className = 'alert-banner danger';
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <div class="alert-banner-title">💳 Charged today — $${total}</div>
+      <div class="alert-banner-sub">${names}</div>
+      <button class="alert-banner-close" onclick="this.parentElement.style.display='none'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>`;
+  } else if (soonSubs.length > 0) {
+    const next = soonSubs.sort((a,b) => daysUntil(a.day) - daysUntil(b.day))[0];
+    const d = daysUntil(next.day);
+    banner.className = 'alert-banner warning';
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <div class="alert-banner-title">🔔 ${next.name} in ${d} day${d > 1 ? 's' : ''}</div>
+      <div class="alert-banner-sub">$${next.amount} · ${ordinal(next.day)} of the month${soonSubs.length > 1 ? ` · +${soonSubs.length-1} more` : ''}</div>
+      <button class="alert-banner-close" onclick="this.parentElement.style.display='none'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
 function render() {
+  renderAlertBanner();
   renderHeader();
   renderList();
 }

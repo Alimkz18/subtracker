@@ -1,55 +1,45 @@
-# SubTracker 💳
+# SubTracker
 
-A beautiful PWA to track your subscriptions and get notified before payments hit.
+Offline-first progressive web app that tracks recurring subscriptions and reminds you before a payment hits.
+
+**Live:** https://alimkz18.github.io/subtracker
 
 ## Features
-- 📋 Pre-loaded with your subscriptions ($509/mo)
-- 🔔 Notifications: 3 days before, 1 day before, and on payment day
-- ➕ Add / edit / remove subscriptions
-- 🔗 Quick-link to manage each subscription's website
-- 📱 Installable on your phone (iOS & Android)
-- 💾 All data saved locally on your device
 
-## Deploy to GitHub Pages (free hosting)
+- Add, edit and remove subscriptions with price, billing cycle and next payment date
+- Monthly total calculated automatically
+- Push notifications 3 days before, 1 day before and on the payment day
+- Quick link to each service's account page to cancel or change a plan
+- Installable on iOS and Android (Add to Home Screen), works offline
+- No backend, no account: all data stays in the browser's local storage
 
-1. Create a new repo on GitHub (e.g. `subtracker`)
-2. Upload all files from this folder
-3. Go to **Settings → Pages → Source: main branch / root**
-4. Your app is live at `https://yourusername.github.io/subtracker`
+## How it works
 
-## Install on your phone
+| File | Role |
+|---|---|
+| `index.html` | UI |
+| `style.css` | Styles |
+| `app.js` | State, rendering, notification scheduling |
+| `sw.js` | Service worker: offline cache and notification delivery |
+| `manifest.json` | PWA manifest (icons, display mode) |
 
-**iPhone (Safari):**
-1. Open the URL in Safari
-2. Tap the Share button (box with arrow)
-3. Tap "Add to Home Screen"
-4. Done — opens like a native app
+## Run locally
 
-**Android (Chrome):**
-1. Open the URL in Chrome
-2. Tap the 3-dot menu
-3. Tap "Add to Home Screen" or "Install App"
+Any static server works:
 
-## Notifications
-
-Tap the 🔔 bell icon in the app to enable notifications.
-- You'll get alerts when a payment is **today**, **1 day away**, or **3 days away**
-- On iOS, notifications only work when the app is installed on the home screen
-
-## File structure
-```
-index.html      — main UI
-style.css       — styles
-app.js          — all logic + data
-sw.js           — service worker (offline + notifications)
-manifest.json   — PWA config
-icons/          — app icons (add icon-192.png and icon-512.png)
+```bash
+python3 -m http.server 8080
+# open http://localhost:8080
 ```
 
-## Adding icons
+Notifications require HTTPS or `localhost`. On iOS they work only after the app is installed to the home screen.
 
-For the app icon, add two PNG files to an `icons/` folder:
-- `icons/icon-192.png` (192×192px)
-- `icons/icon-512.png` (512×512px)
+## Deploy
 
-You can use any icon generator or create your own.
+The site is published from the `main` branch root via GitHub Pages (Settings → Pages).
+
+## Roadmap
+
+- Export / import as JSON
+- Currency selection
+- Category breakdown chart
